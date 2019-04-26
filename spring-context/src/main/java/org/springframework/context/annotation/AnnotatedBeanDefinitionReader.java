@@ -225,12 +225,17 @@ public class AnnotatedBeanDefinitionReader {
 			return;
 		}
 
+		// todo 待研究
 		abd.setInstanceSupplier(instanceSupplier);
+
+		// 解析 bean 的 作用域
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
-
+		//解析几个 特别的注解
 		AnnotationConfigUtils.processCommonDefinitionAnnotations(abd);
+
+		//这里 不重要了 表示 可以通过手动传值过来 更改 特定的几个属性
 		if (qualifiers != null) {
 			for (Class<? extends Annotation> qualifier : qualifiers) {
 				if (Primary.class == qualifier) {
@@ -248,8 +253,14 @@ public class AnnotatedBeanDefinitionReader {
 			customizer.customize(abd);
 		}
 
+		//BeanDefinitionHolder 很简单 就是BeanDefinition+beanName的 一种数据结构
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
+		//设置代理模型
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+
+		/**
+		*  很重要 这一步是注册 将前面解析好的BeanDefinition 注册到容器中
+		 */
 		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
 	}
 
