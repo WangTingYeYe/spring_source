@@ -519,17 +519,21 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			// Prepare this context for refreshing.
 			prepareRefresh();
 
+			// 先刷新beanFactory 后拿到 beanFactory
 			// Tell the subclass to refresh the internal bean factory.
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
+			// 准备bean工厂
+			// 非常重要 主要是设置 一些 spring内置的 后置处理器。这些处理器非常重要 xxAwareProcessor
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
 			try {
-				// Allows post-processing of the bean factory in context subclasses.
+				// Allows post-processing of the bean factory in context subclasses. 这是一个空方法 后面可能会有用
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				// 执行beanFactory 的后置处理器。设置好beanFactory以便于后续 来生成bean
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -579,6 +583,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	}
 
 	/**
+	 * 一些前置环境准备 比如 启动时间等等
 	 * Prepare this context for refreshing, setting its startup date and
 	 * active flag as well as performing any initialization of property sources.
 	 */
@@ -650,7 +655,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
 		// Configure the bean factory with context callbacks.
+		// beanPostProcessors中添加ApplicationContextAwareProcessor的后置处理器
+		// 非常重要 主要可以看ApplicationContextAwareProcessor 这个后置处理器的 postProcessBeforeInitialization 方法
+		// 会判断 bean是否是 EnvironmentAware EmbeddedValueResolverAware ResourceLoaderAware... 类型 为其设置 不同的 环境
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
+		//跳过 以下类型的bean 因为 上面 的后置处理器里面会处理这些类型的bean
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
 		beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);
@@ -666,8 +675,10 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		beanFactory.registerResolvableDependency(ApplicationContext.class, this);
 
 		// Register early post-processor for detecting inner beans as ApplicationListeners.
+		//
 		beanFactory.addBeanPostProcessor(new ApplicationListenerDetector(this));
 
+		// 对下面几个特殊的bean 设置一些Aware后置处理器
 		// Detect a LoadTimeWeaver and prepare for weaving, if found.
 		if (beanFactory.containsBean(LOAD_TIME_WEAVER_BEAN_NAME)) {
 			beanFactory.addBeanPostProcessor(new LoadTimeWeaverAwareProcessor(beanFactory));

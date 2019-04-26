@@ -19,6 +19,9 @@ package org.springframework.beans.factory.config;
 import org.springframework.beans.BeansException;
 
 /**
+ * 这个是beanFactory后置处理器。主要 用来干预 beanFacoty的上下文。可以为beanFactory
+ * 设置属性。类比BeanPostProcessor bean后置处理器
+ *
  * Allows for custom modification of an application context's bean definitions,
  * adapting the bean property values of the context's underlying bean factory.
  *

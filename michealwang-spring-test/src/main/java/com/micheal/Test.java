@@ -24,9 +24,11 @@ public class Test {
 		AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext();
 
 		//主要是是注册BeanDefinition(spring中类的描述 类比与java中 的Class类 描述 类)
+		// DefaultListableBeanFactory 中有一个 beanDefinitionMap 存储的
 		annotationConfigApplicationContext.register(AppConfig.class);
 
 
+		//
 		annotationConfigApplicationContext.refresh();
 
 		IndexDao indexDao = annotationConfigApplicationContext.getBean(IndexDao.class);
