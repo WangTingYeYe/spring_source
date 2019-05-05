@@ -78,12 +78,14 @@ public class AnnotatedBeanDefinitionReader {
 	 * @param environment the {@code Environment} to use when evaluating bean definition
 	 * profiles.
 	 * @since 3.1
+	 * AnnotationConfigApplicationContext 容器本身其实就是一个 BeanDefinitionRegistry
 	 */
 	public AnnotatedBeanDefinitionReader(BeanDefinitionRegistry registry, Environment environment) {
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+		//主要是委托给下面代码 来处理逻辑
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 

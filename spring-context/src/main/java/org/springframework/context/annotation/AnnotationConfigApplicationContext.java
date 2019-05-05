@@ -62,7 +62,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
-		//其父类 做了很多事情
+		//其父类 new 了 DefaultListableBeanFactory 即bean工厂
 
 		// 创建一个 BeanDefinition 的读取器
 		this.reader = new AnnotatedBeanDefinitionReader(this);

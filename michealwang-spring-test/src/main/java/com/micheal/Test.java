@@ -17,9 +17,11 @@ public class Test {
 
 	public static void main(String[] args) {
 
-		// 1、父类的构造方法 --
-		// 2、
-		// 3、
+		// 1、父类的构造方法 -- 创建环境
+		// 2、创建AnnotatedBeanDefinitionReader(简称BDR) 并委托完成下面逻辑AnnotationConfigUtils.registerAnnotationConfigProcessors
+		// 		2.1 设置 DependencyComparator  AutowireCandidateResolver
+		// 		2.2 设置6大RootBeanDefinition对象 并注册到BeanDefinitionMap 中
+		// 3、创建 ClassPathBeanDefinitionScanner
 		//初始化beanfactory 环境
 		AnnotationConfigApplicationContext annotationConfigApplicationContext = new AnnotationConfigApplicationContext();
 
