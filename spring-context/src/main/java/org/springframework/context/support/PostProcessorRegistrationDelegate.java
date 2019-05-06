@@ -46,7 +46,11 @@ import java.util.Set;
  * @since 4.0
  */
 final class PostProcessorRegistrationDelegate {
-
+	/**
+	 *
+	 * @param beanFactory
+	 * @param beanFactoryPostProcessors 这个是通过 applicationContext 手动 add进来的 一般来说 我们不会这么添加  所有可以认为是空的
+	 */
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
@@ -55,14 +59,20 @@ final class PostProcessorRegistrationDelegate {
 
 		if (beanFactory instanceof BeanDefinitionRegistry) {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
+			//BeanDefinitionRegistryPostProcessor 其实是 BeanFactoryPostProcessor的一种  但是 又扩展了
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
 			// 暂时为空
+			/**
+			 * 将beanFactoryPostProcessors 分组 成regularPostProcessors 和 registryProcessors
+			 */
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
+					//这里先回调所有后置函数
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
@@ -94,8 +104,10 @@ final class PostProcessorRegistrationDelegate {
 			}
 			//排了个序
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
+			// 这里合并了所有的 BeanFactoryPostProcessor
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 重要这里 就开始执行 spring内部的那些 beanfactory 后置处理器
+			// 重要这里 就开始执行 spring内部的那些 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
+			// 就是 这个 ConfigurationClassPostProcessor， 就是在构建bdr 的时候放进来的
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 

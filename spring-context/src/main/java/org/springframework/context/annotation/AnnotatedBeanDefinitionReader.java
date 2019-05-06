@@ -202,8 +202,8 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 *
 	 * 根据 传递过来的类注册bean
-	 * 1、如果加了@Configuration 表示配置类
-	 * 2、也可以传入一个 bean 直接将该bean注册进来
+	 * 1、如果加了@Configuration 表示配置类 注册并解析
+	 * 2、也可以传入一个 bean 直接将该beanClass 解析成 BeanDefinition 放到bdMap中
 	 *
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.

@@ -517,6 +517,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
+			// 一些前置环境准备 比如 启动时间等等 容器状态
 			prepareRefresh();
 
 			// 先刷新beanFactory 后拿到 beanFactory
@@ -524,7 +525,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// 准备bean工厂
-			// 非常重要 主要是设置 一些 spring内置的 后置处理器。这些处理器非常重要 xxAwareProcessor
+			// 非常重要 主要是设置 一些 spring内置的 后置处理器。
+			// 这些处理器非常重要 xxAwareProcessor 就是给 实现了xxxAware接口的bean中注入 一些 属性 例如application、Environment等等
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 
@@ -535,6 +537,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 				// Invoke factory processors registered as beans in the context.
 				// 执行beanFactory 的后置处理器。设置好beanFactory以便于后续 来生成bean
+				/**
+				 * 非常重要 一定要好好研究研究
+				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
@@ -715,6 +720,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+		//getBeanFactoryPostProcessors() 是为了获得通过 annotationConfigApplicationContext.addBeanFactoryPostProcessor(); 手动添加进来的 不是 @Component 扫描进来的
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
