@@ -17,6 +17,8 @@
 package org.springframework.core;
 
 /**
+ *
+ * 实现了该接口的 后置处理器 会有限执行 例如 ConfigurationClassPostProcessor 类
  * Extension of the {@link Ordered} interface, expressing a <em>priority</em>
  * ordering: order values expressed by {@code PriorityOrdered} objects
  * always apply before same order values expressed by <em>plain</em>

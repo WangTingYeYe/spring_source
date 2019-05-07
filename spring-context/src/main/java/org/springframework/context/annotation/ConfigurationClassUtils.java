@@ -16,14 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -37,6 +31,11 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utilities for identifying @{@link Configuration} classes.
@@ -71,6 +70,15 @@ abstract class ConfigurationClassUtils {
 
 
 	/**
+	 * 为了校验 当前bd 是否为 配置类
+	 * 所谓配置类 有两种：
+	 * 1、@Confifuration注解标识  这里为full 配置类
+	 * 2、以下注解 标识的也是 配置类 为 lite  配置类
+	 * 		candidateIndicators.add(Component.class.getName());
+	 * 		candidateIndicators.add(ComponentScan.class.getName());
+	 * 		candidateIndicators.add(Import.class.getName());
+	 * 		candidateIndicators.add(ImportResource.class.getName());
+	 *
 	 * Check whether the given bean definition is a candidate for a configuration class
 	 * (or a nested component class declared within a configuration/component class,
 	 * to be auto-registered as well), and mark it accordingly.
@@ -85,6 +93,12 @@ abstract class ConfigurationClassUtils {
 		}
 
 		AnnotationMetadata metadata;
+		/**
+		 *  这里就是为了 解析一个bd的 元数据
+		 *  不同的bd 有不同的 解析方式
+		 *  例如 ： 加了注解的 则通过 AnnotatedBeanDefinition
+		 *
+		 */
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
@@ -109,17 +123,25 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
+		// 如果是 配置类则设置 full
 		if (isFullConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		// 		添加了以下的注解 则这个 lite
+		//      candidateIndicators.add(Component.class.getName());
+		//		candidateIndicators.add(ComponentScan.class.getName());
+		//		candidateIndicators.add(Import.class.getName());
+		//		candidateIndicators.add(ImportResource.class.getName());
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
+		// 否则  这个bd就不是 配置类
 		else {
 			return false;
 		}
 
 		// It's a full or lite configuration candidate... Let's determine the order value, if any.
+		// 排序
 		Integer order = getOrder(metadata);
 		if (order != null) {
 			beanDef.setAttribute(ORDER_ATTRIBUTE, order);

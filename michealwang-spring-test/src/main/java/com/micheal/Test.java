@@ -1,5 +1,6 @@
 package com.micheal;
 
+import com.micheal.beanFactoryPostProcessor.MyBeanFactoryPostProcessor;
 import com.micheal.comfig.AppConfig;
 import com.micheal.dao.IndexDao;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -28,7 +29,7 @@ public class Test {
 		//主要是是注册BeanDefinition(spring中类的描述 类比与java中 的Class类 描述 类)
 		// DefaultListableBeanFactory 中有一个 beanDefinitionMap 存储的
 		annotationConfigApplicationContext.register(AppConfig.class);
-//		annotationConfigApplicationContext.addBeanFactoryPostProcessor( new MyBeanFactoryPostProcessor());
+		annotationConfigApplicationContext.addBeanFactoryPostProcessor( new MyBeanFactoryPostProcessor());
 
 
 		//

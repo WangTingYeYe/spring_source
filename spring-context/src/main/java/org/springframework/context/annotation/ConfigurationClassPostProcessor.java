@@ -266,6 +266,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+			// 判断 是否解析过 即是否被被表示 为full 或者 lite
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
 					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
 				if (logger.isDebugEnabled()) {
@@ -274,8 +275,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			}
 			//ConfigurationClassUtils.checkConfigurationClassCandidate
 			// 这里面会给  isFullConfigurationClass isLiteConfigurationClass
-			// 设置 full 或者 lite 表示 是否是 配置类
+			// 设置 			full 	或者 	lite
+			// 表示 是否是 	全配置类	或者	 	简化配置类
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
+				// 拿到 所有 配置类bd
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
@@ -319,7 +322,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
-			// 这一是重点  解析所有的 配置类@Configuration
+			/**
+			 * 	这一是重点  解析所有的 配置类@Configuration
+			 * 	----------------------------------
+ 			 */
 			parser.parse(candidates);
 			parser.validate();
 

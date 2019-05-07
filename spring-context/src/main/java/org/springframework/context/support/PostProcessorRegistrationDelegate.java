@@ -87,7 +87,8 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
-			//这里保存的就是当前扫描到的所有spring内部的beanfactory后置处理器
+			//这里是保存所有实现了PriorityOrdered 接口的 BeanDefinitionRegistryPostProcessor 因为实现了PriorityOrdered接口的后置处理器会优先处理
+			//一般都是 spring内部的一些后置处理器 这里会有限 可以参考PriorityOrdered 接口
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// **********First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
@@ -104,9 +105,9 @@ final class PostProcessorRegistrationDelegate {
 			}
 			//排了个序
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
-			// 这里合并了所有的 BeanFactoryPostProcessor
+			// 这里合并了所有的 BeanFactoryPostProcessor  registryProcessors 所以 这里就相当于所有的 BeanFactoryPostProcessor
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 重要这里 就开始执行 spring内部的那些 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
+			// 重要这里 就开始执行 那些优先执行的 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
 			// 就是 这个 ConfigurationClassPostProcessor， 就是在构建bdr 的时候放进来的
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
