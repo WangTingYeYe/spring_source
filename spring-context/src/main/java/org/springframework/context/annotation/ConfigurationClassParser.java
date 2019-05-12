@@ -264,6 +264,7 @@ class ConfigurationClassParser {
 	}
 
 	/**
+	 * 解析配置类
 	 * Apply processing and build a complete {@link ConfigurationClass} by reading the
 	 * annotations, members and methods from the source class. This method can be called
 	 * multiple times as relevant sources are discovered.
@@ -291,6 +292,9 @@ class ConfigurationClassParser {
 			}
 		}
 
+		//这里处理配置类中的 @ComponentScan 注解
+		//1、先获取该注解上加的所有值
+		//2、扫描这些包和类成bd 可见源码 ，每扫描到的时候就已经注册到 bdmap中去了
 		// Process any @ComponentScan annotations
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
@@ -298,6 +302,7 @@ class ConfigurationClassParser {
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
+				// 这里是扫描的核心逻辑
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
@@ -313,6 +318,11 @@ class ConfigurationClassParser {
 			}
 		}
 
+		/**
+		 * 这里 处理Import 注解  非常重要
+		 *
+		 *
+		 */
 		// Process any @Import annotations
 		processImports(configClass, sourceClass, getImports(sourceClass), true);
 
