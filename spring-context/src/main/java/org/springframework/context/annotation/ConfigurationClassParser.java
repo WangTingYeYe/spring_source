@@ -160,6 +160,7 @@ class ConfigurationClassParser {
 
 
 	public void parse(Set<BeanDefinitionHolder> configCandidates) {
+		//推迟解析的 ImportSelectors
 		this.deferredImportSelectors = new LinkedList<>();
 
 		// 遍历得到所有的 配置 BD 对象 依次解析
@@ -253,9 +254,14 @@ class ConfigurationClassParser {
 			}
 		}
 
+		//上面不重要 下面代码非常重要 真正解析配置类
 		// Recursively process the configuration class and its superclass hierarchy.
 		SourceClass sourceClass = asSourceClass(configClass);
 		do {
+			// 在解析 @Import 中的ImportSelect.class 的时候说过，当import一个普通类时怎么处理
+			// 当import一个普通类时，doProcessConfigurationClass 啥事都不干，而且返回null 跳出循环，
+			// 由此可见当@Import 搞进来一个普通bd 则会通过this.configurationClasses.put(configClass, configClass);保存起来
+			//后面一定有代码处理他们
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass);
 		}
 		while (sourceClass != null);
@@ -292,17 +298,20 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// 这里是重点
 		//这里处理配置类中的 @ComponentScan 注解
 		//1、先获取该注解上加的所有值
 		//2、扫描这些包和类成bd 可见源码 ，每扫描到的时候就已经注册到 bdmap中去了
 		// Process any @ComponentScan annotations
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
+
 		if (!componentScans.isEmpty() &&
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
-				// 这里是扫描的核心逻辑
+				// 这里是扫描的核心逻辑 遍历@ComponentScan 中要扫描的包 扫描出这些包下面的所有加了spring-bean注解的类
+				// 扫描的时候就顺手注册到bdmap当中了可以看源码
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
@@ -320,8 +329,7 @@ class ConfigurationClassParser {
 
 		/**
 		 * 这里 处理Import 注解  非常重要
-		 *
-		 *
+		 * getImports(sourceClass)就是拿到解析的配置类当中的 @Import 的 value
 		 */
 		// Process any @Import annotations
 		processImports(configClass, sourceClass, getImports(sourceClass), true);
@@ -623,34 +631,61 @@ class ConfigurationClassParser {
 			this.problemReporter.error(new CircularImportProblem(configClass, this.importStack));
 		}
 		else {
+
+			//主要进下面的逻辑
 			this.importStack.push(configClass);
 			try {
 				for (SourceClass candidate : importCandidates) {
+					//1、处理ImportSelector
+					//功能： 实现ImportSelector接口的方法后可以返回一个类的全类名，
+					// 这里会根据返回的全类名扫描bd，扫描到的bd，如果是配置类可以递归解析
+					//值得一提的是，这里还可以让实现类实现 xxxAware接口,这样就可以注入很多容器信息
+					//做插件开发的时候可以根据环境啊等等 来判断注册那个bd---个人思路
 					if (candidate.isAssignable(ImportSelector.class)) {
 						// Candidate class is an ImportSelector -> delegate to it to determine imports
 						Class<?> candidateClass = candidate.loadClass();
-						ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);
+
+						ImportSelector selector = BeanUtils.instantiateClass(candidateClass, ImportSelector.class);//--这个工具类以后可以用用
 						// 这里表示 实现了 ImportSelector接口的 也可以实现 xxxAware 接口 这里会注入 各种 容器组件 方便 ImportSelector的业务操作
 						ParserStrategyUtils.invokeAwareMethods(
 								selector, this.environment, this.resourceLoader, this.registry);
+
+						// 延迟解析的ImportSelectors
 						if (this.deferredImportSelectors != null && selector instanceof DeferredImportSelector) {
 							this.deferredImportSelectors.add(
 									new DeferredImportSelectorHolder(configClass, (DeferredImportSelector) selector));
 						}
 						else {
+							//调用实现类返回一批bd的全类名
 							String[] importClassNames = selector.selectImports(currentSourceClass.getMetadata());
+							//加载
 							Collection<SourceClass> importSourceClasses = asSourceClasses(importClassNames);
+
+							//递归调用本方法继续解析 巧妙的一批
+							// ？？？因为这里 扫描出来的可能还是 一个 ImportSelector、ImportBeanDefinitionRegistrar
+							// 那扫描出来的如果是一个配置类怎么办？？可以看else里面他就去调用了解析配置类的方法
+							// 那如果扫描出来的是一个普通类怎么办？？？在解析配置类的方法里面处理了
 							processImports(configClass, currentSourceClass, importSourceClasses, false);
 						}
 					}
 					else if (candidate.isAssignable(ImportBeanDefinitionRegistrar.class)) {
 						// Candidate class is an ImportBeanDefinitionRegistrar ->
 						// delegate to it to register additional bean definitions
+
+						//2、mybatis 集成spring就是用了这个家伙
+						// 功能： 实现了ImportBeanDefinitionRegistrar接口后 他其实是将beanFatory都给转入到方法里面
+						// 既然拿到了beanFactory那么什么事情做不了？
+						//例如mbatis @Mapper 注解标注在接口上为什么可以在ioc中注入一个bean？？？
+						//其实就是在这个方法里面 mbatis扫描了所有@Mapper注解 然后给他们代理
+						//当然 mybatis 其实不是吧代理对象的class放到bdmap中，而是放了一个FactoryBean
+						//当容器初始化bean的时候就会调用这个FactoryBean的getObject() 由他来代理处理后返回一个DAO的代理对象---巧妙
 						Class<?> candidateClass = candidate.loadClass();
 						ImportBeanDefinitionRegistrar registrar =
 								BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
+						//处理xxxAware
 						ParserStrategyUtils.invokeAwareMethods(
 								registrar, this.environment, this.resourceLoader, this.registry);
+						// 这里只是在该配置类中添加一下，相信继续解析配置类的的时候肯定会把他拿出来统一调用
 						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());
 					}
 					else {
@@ -658,6 +693,8 @@ class ConfigurationClassParser {
 						// process it as an @Configuration class
 						this.importStack.registerImport(
 								currentSourceClass.getMetadata(), candidate.getMetadata().getClassName());
+
+						// 3、上面说的在这里可以验证，这里去调用解析配置了
 						processConfigurationClass(candidate.asConfigClass(configClass));
 					}
 				}

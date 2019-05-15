@@ -135,6 +135,7 @@ class ComponentScanAnnotationParser {
 		});
 
 		/**
+		 * 	上面都是设置一些默认的属性 例如 lazyInit....
 		 *  这里开始扫描
 		 */
 

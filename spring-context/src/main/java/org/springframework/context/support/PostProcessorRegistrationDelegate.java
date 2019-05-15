@@ -98,6 +98,7 @@ final class PostProcessorRegistrationDelegate {
 			//这里会发现这么一个org.springframework.context.annotation.internalConfigurationAnnotationProcessor
 			//它非常重要 什么时候放进来的？？？？
 			for (String ppName : postProcessorNames) {
+				// 这里表示优先执行的 --注意这里其实 还没有扫描项目，所以只有spring内部添加的beanDefinition 和手动add 的beanDefinition
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
@@ -107,8 +108,12 @@ final class PostProcessorRegistrationDelegate {
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			// 这里合并了所有的 BeanFactoryPostProcessor  registryProcessors 所以 这里就相当于所有的 BeanFactoryPostProcessor
 			registryProcessors.addAll(currentRegistryProcessors);
-			// 重要这里 就开始执行 那些优先执行的 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
-			// 就是 这个 ConfigurationClassPostProcessor， 就是在构建bdr 的时候放进来的
+
+
+			/**
+			 * 重要这里 就开始执行 那些优先执行的 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
+			 * 就是 这个 ConfigurationClassPostProcessor， 就是在构建bdr 的时候放进来的
+			 */
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
@@ -145,6 +150,28 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			/**
+			 *  上面已经回调完了BeanDefinitionRegistryPostProcessor
+			 *  这里开始回调 BeanFactoryPostProcessor了
+			 *  ConfigurationClassPostProcessor完成了一件非常牛逼的事情
+			 *  问题：
+			 *   当我们的full配置类@Configuration 注解类 中使用了 @bean
+			 * @Bean
+			 *  A a(){
+			 *   return new A()
+			 *   }
+			 *
+			 * @Bean
+			 * B b(){
+			 * 		A a= a();
+			 * 	return new B(a);
+			 * 		}
+			 * 那么这个A 默认情况下到底创建了几次？ 1次。那么这是怎么做到的。非常麻烦
+			 *
+			 * 其实 就是ConfigurationClassPostProcessor 的后置处理器方法，干的，他用cglib代理了我们full配置类
+			 *
+			 * 详情查看源码
+			 */
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
 		}

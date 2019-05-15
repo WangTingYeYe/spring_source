@@ -143,6 +143,8 @@ class ConfigurationClassBeanDefinitionReader {
 		}
 
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		// 这里就是来处理@Import(ImportBeanDefinitionRegistrars.class) 的方法
+		// 遍历调用
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 

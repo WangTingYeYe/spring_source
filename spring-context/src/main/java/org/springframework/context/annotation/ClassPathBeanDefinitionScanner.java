@@ -272,12 +272,16 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
 		for (String basePackage : basePackages) {
-			// 这里扫描 包
+
+			// 这里就是扫描出所有的BeanDefinition
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
+
+
 			for (BeanDefinition candidate : candidates) {
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+				//这里对扫描出来的bd稍作处理  暂时不重要
 				if (candidate instanceof AbstractBeanDefinition) {
 					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
 				}
@@ -289,7 +293,9 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
-					//这里将扫描到的 bd 注册进bdmap
+
+
+					//这里就将扫描到的 bd 顺手注册进bdmap
 					registerBeanDefinition(definitionHolder, this.registry);
 				}
 			}

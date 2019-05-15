@@ -517,7 +517,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	public void refresh() throws BeansException, IllegalStateException {
 		synchronized (this.startupShutdownMonitor) {
 			// Prepare this context for refreshing.
-			// 一些前置环境准备 比如 启动时间等等 容器状态
+			// 一些前置环境准备 比如 启动时间等等 容器状态 不重要
 			prepareRefresh();
 
 			// 先刷新beanFactory 后拿到 beanFactory
@@ -538,7 +538,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// Invoke factory processors registered as beans in the context.
 				// 执行beanFactory 的后置处理器。设置好beanFactory以便于后续 来生成bean
 				/**
-				 * 非常重要 一定要好好研究研究
+				 * 非常重要 一定要好好研究研究 ----做了一大堆的事情
+				 *  其中有个非常重要的ConfigurationClassPostProcesser 完成了配置类的解析 扫描bd
 				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 

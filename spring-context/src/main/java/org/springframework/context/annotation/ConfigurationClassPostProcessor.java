@@ -236,6 +236,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	/**
 	 * Prepare the Configuration classes for servicing bean requests at runtime
 	 * by replacing them with CGLIB-enhanced subclasses.
+	 *
+	 * 该回调方法就是为了 代理我们的 full配置类 其中一个特别重要的功能就是 处理 @Bean方法被调用多次时，创建不同的bean对象
 	 */
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
@@ -251,11 +253,14 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
 
+		// 就在这里代理了 我们的 full配置类
 		enhanceConfigurationClasses(beanFactory);
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
 	/**
+	 *
+	 * 顾名思义，这是一个解析 配置类的方法
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
 	 */
@@ -266,7 +271,11 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-			// 判断 是否解析过 即是否被被表示 为full 或者 lite
+			// 判断 该配置类是否已经被解析过
+			// 1、判断是否为配置类
+			// 2、判断是否是解析过的，因为下面的代码会判断是否是配置类 如果是 则标识为 full 或者 lite 并走后面的逻辑进行解析
+			// 3、这里的 full 和lite 非常的重要，full表示@Configuration注解类 lite表示 @Imoprt @CompoentScan ...
+			// 4、为什么这里要判断？？？因为后解析配置类的时候有可能会扫描到新的配置类，会重新调用该方法，递归
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
 					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
 				if (logger.isDebugEnabled()) {
@@ -302,6 +311,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
 			if (!this.localBeanNameGeneratorSet) {
+				// 从beanfactory中拿一个beanName 生成器
 				BeanNameGenerator generator = (BeanNameGenerator) sbr.getSingleton(CONFIGURATION_BEAN_NAME_GENERATOR);
 				if (generator != null) {
 					this.componentScanBeanNameGenerator = generator;
@@ -315,6 +325,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Parse each @Configuration class
+		// 构建一个 解析器
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
@@ -323,10 +334,12 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			/**
-			 * 	这一是重点  解析所有的 配置类@Configuration
+			 * 	这一是重点  解析所有的 配置类 包括full 和 lite
 			 * 	----------------------------------
  			 */
 			parser.parse(candidates);
+
+
 			parser.validate();
 
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
@@ -338,7 +351,15 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			/**
+			 * 这里要加载一些不是通过@ComponetScan 扫描的bd
+			 * 解释了 前面parser.parse(candidates); 当中明明引入了一些bd但是 为什么没有放到bdMap中去的问题-----
+			 * 例如 @Import 、@Bean 方法。。。
+			 */
 			this.reader.loadBeanDefinitions(configClasses);
+
+
+
 			alreadyParsed.addAll(configClasses);
 
 			candidates.clear();
@@ -385,6 +406,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Map<String, AbstractBeanDefinition> configBeanDefs = new LinkedHashMap<>();
 		for (String beanName : beanFactory.getBeanDefinitionNames()) {
 			BeanDefinition beanDef = beanFactory.getBeanDefinition(beanName);
+			//筛选出所有的full配置类 ，只代理full 配置类
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef)) {
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
