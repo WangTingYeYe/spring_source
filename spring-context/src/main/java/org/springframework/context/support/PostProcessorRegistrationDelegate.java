@@ -72,7 +72,7 @@ final class PostProcessorRegistrationDelegate {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
-					//这里先回调所有后置函数
+					//这里先回调所有后置函数 即 手动注册进来的 后置处理器优先执行
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
@@ -98,7 +98,8 @@ final class PostProcessorRegistrationDelegate {
 			//这里会发现这么一个org.springframework.context.annotation.internalConfigurationAnnotationProcessor
 			//它非常重要 什么时候放进来的？？？？
 			for (String ppName : postProcessorNames) {
-				// 这里表示优先执行的 --注意这里其实 还没有扫描项目，所以只有spring内部添加的beanDefinition 和手动add 的beanDefinition
+				// 这里表示优先执行的 --注意这里其实 还没有扫描项目，
+				// 所以只有spring内部添加的beanDefinition 和手动add 的beanDefinition
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
@@ -111,8 +112,9 @@ final class PostProcessorRegistrationDelegate {
 
 
 			/**
-			 * 重要这里 就开始执行 那些优先执行的 BeanDefinitionRegistryPostProcessor 后置处理器 其实就是一个 用来解析 AppConfig.class
-			 * 就是 这个 ConfigurationClassPostProcessor， 就是在构建bdr 的时候放进来的
+			 * 重要这里 就开始执行 那些优先执行的 BeanDefinitionRegistryPostProcessor 后置处理器
+			 * 其实就是一个 用来解析 AppConfig.class就是 这个 ConfigurationClassPostProcessor，
+			 * 就是在构建bdr 的时候放进来的
 			 */
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();

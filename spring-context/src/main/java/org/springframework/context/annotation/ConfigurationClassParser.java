@@ -194,6 +194,7 @@ class ConfigurationClassParser {
 			}
 		}
 
+		// 解析那些需要推迟的 @ImportSelect
 		processDeferredImportSelectors();
 	}
 
@@ -258,14 +259,17 @@ class ConfigurationClassParser {
 		// Recursively process the configuration class and its superclass hierarchy.
 		SourceClass sourceClass = asSourceClass(configClass);
 		do {
-			// 在解析 @Import 中的ImportSelect.class 的时候说过，当import一个普通类时怎么处理
-			// 当import一个普通类时，doProcessConfigurationClass 啥事都不干，而且返回null 跳出循环，
+			// 在解析 @Import 中的ImportSelect.class 的时候说过，当import一个普通类时怎么处理？
+			// 当import一个普通类时，doProcessConfigurationClass 啥事都不干，而是返回null 跳出循环，
 			// 由此可见当@Import 搞进来一个普通bd 则会通过this.configurationClasses.put(configClass, configClass);保存起来
 			//后面一定有代码处理他们
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass);
 		}
 		while (sourceClass != null);
 
+		// 这一步 其实 就是说 将 所有来解析的 bd都保存起来（包括、普通bd 、配置bd）
+		// 其中包括：@Import 扫描注入的 普通bd （因为@Import引入的bd 也会来解析一下，即使是普通bd）
+		// 其中@Configuration注解的@Bean method 是保存在 解析类configClass 本身的
 		this.configurationClasses.put(configClass, configClass);
 	}
 
@@ -298,7 +302,7 @@ class ConfigurationClassParser {
 			}
 		}
 
-		// 这里是重点
+		//这里是重点
 		//这里处理配置类中的 @ComponentScan 注解
 		//1、先获取该注解上加的所有值
 		//2、扫描这些包和类成bd 可见源码 ，每扫描到的时候就已经注册到 bdmap中去了
@@ -320,6 +324,7 @@ class ConfigurationClassParser {
 					if (bdCand == null) {
 						bdCand = holder.getBeanDefinition();
 					}
+					//判断扫描出来的 bd 是否是一个配置 类 如果是 继续递归 调用解析该配置类
 					if (ConfigurationClassUtils.checkConfigurationClassCandidate(bdCand, this.metadataReaderFactory)) {
 						parse(bdCand.getBeanClassName(), holder.getBeanName());
 					}
@@ -347,6 +352,8 @@ class ConfigurationClassParser {
 		}
 
 		// Process individual @Bean methods
+		// 解析配置类中的 @Bean注解 这里只是将
+		// 这些 @Bean 先绑定在configClass上，后面肯定会拿出来放在bdmap中
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
 			configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
@@ -356,6 +363,8 @@ class ConfigurationClassParser {
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
+		// 解析父类 如果父类解析过了 就不解析了。
+		// 并且忽略以java开头的类 即jdk的类忽略掉
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
 			if (superclass != null && !superclass.startsWith("java") &&
@@ -418,6 +427,8 @@ class ConfigurationClassParser {
 	}
 
 	/**
+	 *
+	 * 解析 该配置类的 中加了 @Bean注解的方法，并将这些方法解析成 MethodMetadata 对象
 	 * Retrieve the metadata for all <code>@Bean</code> methods.
 	 */
 	private Set<MethodMetadata> retrieveBeanMethodMetadata(SourceClass sourceClass) {

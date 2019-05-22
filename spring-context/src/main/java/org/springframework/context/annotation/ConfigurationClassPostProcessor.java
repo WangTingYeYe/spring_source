@@ -282,12 +282,13 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
-			//ConfigurationClassUtils.checkConfigurationClassCandidate
-			// 这里面会给  isFullConfigurationClass isLiteConfigurationClass
-			// 设置 			full 	或者 	lite
-			// 表示 是否是 	全配置类	或者	 	简化配置类
+			// ConfigurationClassUtils.checkConfigurationClassCandidate
+			// 1、 判断是否为配置类 full 和lite
+			// 2、  isFullConfigurationClass isLiteConfigurationClass
+			//		 设置 			full 	或者 	lite
+			// 		表示 是否是 		全配置类	或者	 	简化配置类
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
-				// 拿到 所有 配置类bd
+				// 拿到 所有 配置类bd（未解析过的）
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
@@ -353,6 +354,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			}
 			/**
 			 * 这里要加载一些不是通过@ComponetScan 扫描的bd
+			 *
 			 * 解释了 前面parser.parse(candidates); 当中明明引入了一些bd但是 为什么没有放到bdMap中去的问题-----
 			 * 例如 @Import 、@Bean 方法。。。
 			 */
@@ -382,7 +384,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				candidateNames = newCandidateNames;
 			}
 		}
-		while (!candidates.isEmpty());
+		while (!candidates.isEmpty()); // 一直解析直到 没有新的bd产生了
 
 		// Register the ImportRegistry as a bean in order to support ImportAware @Configuration classes
 		if (sbr != null && !sbr.containsSingleton(IMPORT_REGISTRY_BEAN_NAME)) {
@@ -397,6 +399,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	}
 
 	/**
+	 *
+	 * 顾名思义就是增强@Configration配置类 那么怎么区分 是@Configration配置类还是 @Iporot @ConpontScan ...?
+	 * 就是通过前面解析 配置类的时候  标识的  full  和 lite
 	 * Post-processes a BeanFactory in search of Configuration class BeanDefinitions;
 	 * any candidates are then enhanced by a {@link ConfigurationClassEnhancer}.
 	 * Candidate status is determined by BeanDefinition attribute metadata.
@@ -430,17 +435,21 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		for (Map.Entry<String, AbstractBeanDefinition> entry : configBeanDefs.entrySet()) {
 			AbstractBeanDefinition beanDef = entry.getValue();
 			// If a @Configuration class gets proxied, always proxy the target class
+			// 标识这个配置类已经是一个代理类
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			try {
 				// Set enhanced subclass of the user-specified bean class
 				Class<?> configClass = beanDef.resolveBeanClass(this.beanClassLoader);
 				if (configClass != null) {
+
+					// 这里开始代理
 					Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 					if (configClass != enhancedClass) {
 						if (logger.isDebugEnabled()) {
 							logger.debug(String.format("Replacing bean definition '%s' existing class '%s' with " +
 									"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 						}
+						//然后将代理后的 类设置给bd
 						beanDef.setBeanClass(enhancedClass);
 					}
 				}

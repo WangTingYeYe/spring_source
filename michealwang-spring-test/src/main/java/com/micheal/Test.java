@@ -28,11 +28,12 @@ public class Test {
 
 		//主要是是注册BeanDefinition(spring中类的描述 类比与java中 的Class类 描述 类)
 		// DefaultListableBeanFactory 中有一个 beanDefinitionMap 存储的
+		// 这个方法就是 根据一个Class 向容器中 注册一个bd
 		annotationConfigApplicationContext.register(AppConfig.class);
 		annotationConfigApplicationContext.addBeanFactoryPostProcessor( new MyBeanFactoryPostProcessor());
 
 
-		//
+		// 这一步才是 最核心的代码
 		annotationConfigApplicationContext.refresh();
 
 		IndexDao indexDao = annotationConfigApplicationContext.getBean(IndexDao.class);

@@ -525,8 +525,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
 
 			// 准备bean工厂
-			// 非常重要 主要是设置 一些 spring内置的 后置处理器。
-			// 这些处理器非常重要 xxAwareProcessor 就是给 实现了xxxAware接口的bean中注入 一些 属性 例如application、Environment等等
+			// 非常重要 主要是设置 一些 spring内置的 bean后置处理器。
+			// 例如非常重要的 xxAwareProcessor 就是给 实现了xxxAware接口的bean中注入
+			// 一些 属性 例如application、Environment等等
 			// Prepare the bean factory for use in this context.
 			prepareBeanFactory(beanFactory);
 

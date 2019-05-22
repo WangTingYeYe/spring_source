@@ -66,7 +66,8 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 
 		// 创建一个 BeanDefinition 的读取器
 		this.reader = new AnnotatedBeanDefinitionReader(this);
-		// 创建一个 BeanDefinition 的扫描器
+		// 创建一个 BeanDefinition 的扫描器 这个没什么卵用，它不是用来扫描配置类制定的包名的
+		// 而是扫描 AnnotationConfigApplicationContext.scan() 方法 添加的包名
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 

@@ -85,7 +85,7 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
-		//主要是委托给下面代码 来处理逻辑
+		//主要是委托给下面代码 来处理逻辑 注册一些 注解配置类的处理器
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 
@@ -139,6 +139,8 @@ public class AnnotatedBeanDefinitionReader {
 	}
 
 	/**
+	 *
+	 * 注册 配置类  获得 该类的 一些信息 为了后面解析的时候使用
 	 * Register a bean from the given bean class, deriving its metadata from
 	 * class-declared annotations.
 	 * @param annotatedClass the class of the bean
@@ -202,7 +204,7 @@ public class AnnotatedBeanDefinitionReader {
 	/**
 	 *
 	 * 根据 传递过来的类注册bean
-	 * 1、如果加了@Configuration 表示配置类 注册并解析
+	 * 1、可以一个配置类
 	 * 2、也可以传入一个 bean 直接将该beanClass 解析成 BeanDefinition 放到bdMap中
 	 *
 	 * Register a bean from the given bean class, deriving its metadata from
@@ -230,7 +232,7 @@ public class AnnotatedBeanDefinitionReader {
 		// todo 待研究
 		abd.setInstanceSupplier(instanceSupplier);
 
-		// 解析 bean 的 作用域
+		// 解析 bean 的 作用域 因为 注册进来的有可能是一个 普通bean
 		ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(abd);
 		abd.setScope(scopeMetadata.getScopeName());
 		String beanName = (name != null ? name : this.beanNameGenerator.generateBeanName(abd, this.registry));
