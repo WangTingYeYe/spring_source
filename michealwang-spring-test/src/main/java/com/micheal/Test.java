@@ -1,6 +1,5 @@
 package com.micheal;
 
-import com.micheal.beanFactoryPostProcessor.MyBeanFactoryPostProcessor;
 import com.micheal.comfig.AppConfig;
 import com.micheal.dao.IndexDao;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -30,7 +29,7 @@ public class Test {
 		// DefaultListableBeanFactory 中有一个 beanDefinitionMap 存储的
 		// 这个方法就是 根据一个Class 向容器中 注册一个bd
 		annotationConfigApplicationContext.register(AppConfig.class);
-		annotationConfigApplicationContext.addBeanFactoryPostProcessor( new MyBeanFactoryPostProcessor());
+//		annotationConfigApplicationContext.addBeanFactoryPostProcessor( new MyBeanFactoryPostProcessor());
 
 
 		// 这一步才是 最核心的代码

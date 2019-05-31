@@ -1,6 +1,6 @@
 package com.micheal.dao;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 /**
  * @author wangting
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
  * Reason:	 TODO ADD REASON. <br/>
  * Date:     2019/4/24 0024 下午 12:50
  */
-//@Repository
+@Component("indexDao")
 public class IndexDao {
 
 	public void query(){

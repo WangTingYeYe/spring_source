@@ -729,8 +729,23 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Trigger initialization of all non-lazy singleton beans...
 		for (String beanName : beanNames) {
+			// 将该bean的父bean合并过来
+			/**
+			 * 例如：
+			 *  <bean id="animal" class="Animal" abstract="true">
+			 *         <property name="legs" value="4"/>
+			 *     </bean>
+			 *
+			 *     <bean id="monkey" parent="animal">
+			 *         <property name="name" value="dudu"/>
+			 *     </bean>
+			 *
+			 *    当解析到 monkey 的时候 会将父bean合并过来 todo 后续可以 看下里面的
+			 */
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
+			// 非抽象 && 单例 && 非懒加载
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
+				// 是否是FactoryBean
 				if (isFactoryBean(beanName)) {
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
@@ -750,6 +765,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						}
 					}
 				}
+				// 普通bean创建
 				else {
 					getBean(beanName);
 				}
