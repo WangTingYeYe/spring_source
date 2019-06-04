@@ -15,5 +15,6 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan("com.micheal")
 //@Import(MyImportSelector.class)
 //@MapperScan
+//@EnableAspectJAutoProxy
 public class AppConfig {
 }

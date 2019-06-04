@@ -38,7 +38,6 @@ public class Test {
 		IndexDao indexDao = annotationConfigApplicationContext.getBean(IndexDao.class);
 		IndexDao indexDao1 = annotationConfigApplicationContext.getBean(IndexDao.class);
 
-		indexDao.query();
 		System.out.println(indexDao.hashCode()+"---"+indexDao1.hashCode());
 
 	}

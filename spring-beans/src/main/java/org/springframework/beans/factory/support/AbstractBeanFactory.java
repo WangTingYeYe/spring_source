@@ -148,6 +148,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	private final List<StringValueResolver> embeddedValueResolvers = new CopyOnWriteArrayList<>();
 
 	/** BeanPostProcessors to apply in createBean */
+	// 保存所有beanPostProcessors
 	private final List<BeanPostProcessor> beanPostProcessors = new CopyOnWriteArrayList<>();
 
 	/** Indicates whether any InstantiationAwareBeanPostProcessors have been registered */
@@ -247,6 +248,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		// 检查bean容器中 是否已经有这个bean了。如果没有才会创建。
 		// 因为有可能手动往容器里面添加过
 		// 这里先不考虑 先关注第一次创建
+		// 这里是解决循环引用的 关键
 		Object sharedInstance = getSingleton(beanName);
 		if (sharedInstance != null && args == null) {
 			if (logger.isDebugEnabled()) {
@@ -264,12 +266,15 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		else {
 			// Fail if we're already creating this bean instance:
 			// We're assumably within a circular reference.
+			//从当前正在创建的 bean中 取出 判断  当前方法创建的bean在不在 这里面 ，如果在里面 则表示 处在循环引用当中
+			//上面没有走，表示 三级缓存中都没有这个值，或者不允许提前曝光bean。并且这里还正在创建它，那么肯定要跑循环依赖异常
+			// 但是讲道理 这里应该不会出现。todo 寻找场景
 			if (isPrototypeCurrentlyInCreation(beanName)) {
 				throw new BeanCurrentlyInCreationException(beanName);
 			}
 
 			// Check if bean definition exists in this factory.
-			// 是否有父beanFactory
+			// 是否有父beanFactory 先跳过 因为没设置 父beanFactory
 			BeanFactory parentBeanFactory = getParentBeanFactory();
 			if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
 				// Not found -> check parent.
@@ -297,7 +302,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
-				// dependsOn 强依赖 检查
+				// dependsOn 强依赖 处理
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {

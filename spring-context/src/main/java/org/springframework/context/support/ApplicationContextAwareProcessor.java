@@ -76,7 +76,7 @@ class ApplicationContextAwareProcessor implements BeanPostProcessor {
 
 
 	/**
-	 * 该吼住处理器的 核心代码  在bean init方法 之前执行
+	 * 该后置处理器的 核心代码  在bean init方法 之前执行
 	 * @param bean the new bean instance
 	 * @param beanName the name of the bean
 	 * @return
