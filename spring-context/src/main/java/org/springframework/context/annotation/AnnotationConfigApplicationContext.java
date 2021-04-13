@@ -62,9 +62,12 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
-		//其父类 new 了 DefaultListableBeanFactory 即bean工厂
-
+		// 其父类 new 了 DefaultListableBeanFactory 即bean工厂
+		super();// 这行是我自己加的
 		// 创建一个 BeanDefinition 的读取器
+		// 最后调用AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
+		// 添加了一个非常重要的BeanConfigurationClassPostProcessor extend BeanDefinitionRegistryPostProcessor
+		// 就是通过该类来解析配置类，从而扫描添加注解的Bean
 		this.reader = new AnnotatedBeanDefinitionReader(this);
 		// 创建一个 BeanDefinition 的扫描器 这个没什么卵用，它不是用来扫描配置类制定的包名的
 		// 而是扫描 AnnotationConfigApplicationContext.scan() 方法 添加的包名
